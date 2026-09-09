@@ -37,8 +37,11 @@ forge --version
 
 ## VSCode setup
 
-Install extensions -
-Github Copilot
-Github Copilot labs
+### Install extensions -
+
+Github Copilot <br>
+Github Copilot labs <br>
+Solidity <br>
+
 
 
