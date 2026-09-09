@@ -96,6 +96,16 @@ forge install OpenZeppelin/OpenZeppelin-contracts
 
 <br>
 <br>
+
+# Install OpenZeppelin Upgradable Contracts
+
+```bash
+forge
+install OpenZeppelin/openzeppelin-contracts-upgradeable
+```
+
+<img width="1357" height="874" alt="image" src="https://github.com/user-attachments/assets/b3a60bc3-1a2d-4a85-b8d8-5c2d4bd38a4e" />
+
 <br>
 <br>
 <br>
