@@ -34,3 +34,11 @@ forge --version
 
 <img width="567" height="102" alt="image" src="https://github.com/user-attachments/assets/475869fb-666b-49a7-8054-3d42035f245e" />
 
+
+## VSCode setup
+
+Install extensions -
+Github Copilot
+Github Copilot labs
+
+
