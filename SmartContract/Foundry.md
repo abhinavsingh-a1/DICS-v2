@@ -22,3 +22,19 @@ forge init
 ### Project will look like this -
 
 <img width="308" height="595" alt="image" src="https://github.com/user-attachments/assets/eff9fd2e-f064-44de-abfa-d1dd6f194ca3" />
+
+## User settings in VSC
+
+```bash
+CTRL + E
+
+Type -
+
+> Open User Settings
+```
+
+<img width="667" height="149" alt="image" src="https://github.com/user-attachments/assets/2851de9a-55e6-4184-8fdb-42b99509b977" />
+
+<img width="1077" height="364" alt="image" src="https://github.com/user-attachments/assets/5881fcbf-802d-4447-8665-100b2bd919bf" />
+
+
