@@ -108,6 +108,16 @@ install OpenZeppelin/openzeppelin-contracts-upgradeable
 
 <br>
 <br>
+
+```bash
+# Remove existing OpenZeppelin installs
+forge remove OpenZeppelin/openzeppelin-contracts
+forge remove OpenZeppelin/openzeppelin-contracts-upgradeable
+
+# Install OpenZeppelin v5.7.0 (standard + upgradeable)
+forge install OpenZeppelin/openzeppelin-contracts@v5.7.0
+forge install OpenZeppelin/openzeppelin-contracts-upgradeable@v5.7.0
+```
 <br>
 <br>
 <br>
