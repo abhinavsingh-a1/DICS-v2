@@ -118,8 +118,15 @@ forge remove OpenZeppelin/openzeppelin-contracts-upgradeable
 forge install OpenZeppelin/openzeppelin-contracts@v5.7.0
 forge install OpenZeppelin/openzeppelin-contracts-upgradeable@v5.7.0
 ```
+
 <br>
 <br>
+
+```bash
+check version of openzepplin standard & upgradeable directly via git tags/commits in each lib
+git -C lib/openzeppelin-contracts describe --tags
+git -C lib/openzeppelin-contracts-upgradeable describe --tags
+```
 <br>
 <br>
 <br>
