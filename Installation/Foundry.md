@@ -129,8 +129,46 @@ git -C lib/openzeppelin-contracts-upgradeable describe --tags
 ```
 <br>
 <br>
+
+# Install ETH Infinitism Account Abstraction
+only needed for ClaimGasPaymaster.sol
+
+```bash
+forge install eth-infinitism/account-abstraction
+```
+
+That command prints the full commit hash that lib/openzeppelin-contracts is currently checked out at -C <path> tells git "run this command as if you wouldd cd into <path> first," without actually changing your shell's working directory. So instead of doing:
+
+```bash
+cd lib/openzeppelin-contracts
+git rev-parse HEAD
+cd -   # back to where you were
+```
+
 <br>
 <br>
+
+### rev-parse
+
+A low-level git command that turns a human-readable reference (a branch name, tag, or symbolic ref like HEAD) into its actual SHA-1 commit hash. Think of it as "resolve this name to the real underlying identifier."
+
+### HEAD
+
+A pointer to whatever commit your working directory is currently checked out at — literally "the current position." In a submodule context like this, HEAD will point to whatever commit forge install checked out (since forge pins submodules to a specific commit, not a floating branch).
+
+Put together: the command answers "what exact commit is this OpenZeppelin submodule sitting on right now?" — output looks like:
+
+```bash
+c1cbb90a9e7f2ea3a3234ba1d4e8f4b1a3c0a5db
+```
+
+### To connect that hash back to a version tag, you can run:
+
+```bash
+git -C lib/openzeppelin-contracts tag --points-at HEAD
+```
+
+which lists any tags (like v5.7.0) attached to that exact commit — if it comes back empty, you're on a commit that isn't tagged (possibly ahead of or between releases).
 <br>
 <br>
 <br>
