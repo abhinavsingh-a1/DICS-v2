@@ -113,6 +113,10 @@ install OpenZeppelin/openzeppelin-contracts-upgradeable
 <br>
 
 ```bash
+git init
+git add .
+git commit -m "Initial commit"
+
 # Remove existing OpenZeppelin installs
 forge remove OpenZeppelin/openzeppelin-contracts
 forge remove OpenZeppelin/openzeppelin-contracts-upgradeable
