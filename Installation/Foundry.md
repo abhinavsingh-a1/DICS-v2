@@ -89,6 +89,9 @@ forge create Test  --rpc-url http://127.0.0.1:8545 --private-key 0xac0974bec39a1
 # Install OpenZeppelin Contracts
 
 ```bash
+git init
+git add .
+git commit -m "Initial commit"
 forge install OpenZeppelin/OpenZeppelin-contracts
 ```
 
