@@ -1,0 +1,6 @@
+---
+- name: Ansible playbook
+  hosts: all
+  remote_user: abhinav
+  roles:
+    - python
