@@ -8,3 +8,9 @@ sudo apt-get install ansible
 ```
 
 <img width="1046" height="174" alt="image" src="https://github.com/user-attachments/assets/402cb239-608f-457c-8de2-5b169953a43c" />
+
+How to run the playbook to connect on Cloud VM
+
+```bash
+ansible-playbook --inventory inventory/vm-setup-playbook/hosts vm-setup-playbook.yml
+```
