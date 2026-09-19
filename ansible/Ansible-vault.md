@@ -2,7 +2,7 @@
 ## SSH to EC2 instance
 
 ```
-ssh -i /Users/rahulwagh/.ssh/aws_ec2_terraform ubuntu@18.198.3.146
+ssh -i /Users/abhinav/.ssh/aws_ec2_terraform ubuntu@18.198.3.146
 ```
 
 ## 1. Ansible vault Commands
@@ -93,7 +93,7 @@ ansible-playbook --inventory inventory/ansible-vault/hosts ansible-vault-playboo
 a. Set the following the `Environment Variable` - 
 
 ```bash
-export ANSIBLE_VAULT_PASSWORD_FILE=/Users/rahulwagh/Documents/Documents-Rahul-MacBook-Pro/jhooq/ansible-examples/part-14-ansible-vault/pass_file/ansible-vault.pass
+export ANSIBLE_VAULT_PASSWORD_FILE=/Users/abhinav/Documents/Documents-Rahul-MacBook-Pro/jhooq/ansible-examples/part-14-ansible-vault/pass_file/ansible-vault.pass
 ```
 
 
