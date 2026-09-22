@@ -1,0 +1,83 @@
+version: "3.8"
+
+# Local 4-node IBFT2.0 Besu network for DICS v2 development/staging parity.
+# Run ./generate-network.sh first to produce ./networkFiles/{genesis.json,keys/}.
+#
+# Node 1 exposes RPC on host port 8545 — point your deployment scripts,
+# backend, and indexer RPC_URL at http://localhost:8545 for this network.
+
+x-besu-common: &besu-common
+  image: hyperledger/besu:latest
+  command: >
+    --genesis-file=/config/genesis.json
+    --data-path=/data
+    --node-private-key-file=/config/key
+    --rpc-http-enabled=true
+    --rpc-http-host=0.0.0.0
+    --rpc-http-api=ETH,NET,IBFT,ADMIN,WEB3
+    --rpc-http-cors-origins=*
+    --host-allowlist=*
+    --p2p-host=0.0.0.0
+    --min-gas-price=0
+    --logging=INFO
+  networks:
+    - besu-net
+
+services:
+  validator1:
+    <<: *besu-common
+    container_name: dics-besu-validator1
+    volumes:
+      - ./networkFiles/genesis.json:/config/genesis.json
+      - ./networkFiles/keys/validator1:/config
+      - besu-data-1:/data
+    ports:
+      - "8545:8545"
+      - "30301:30303"
+
+  validator2:
+    <<: *besu-common
+    container_name: dics-besu-validator2
+    volumes:
+      - ./networkFiles/genesis.json:/config/genesis.json
+      - ./networkFiles/keys/validator2:/config
+      - besu-data-2:/data
+    ports:
+      - "30302:30303"
+
+  validator3:
+    <<: *besu-common
+    container_name: dics-besu-validator3
+    volumes:
+      - ./networkFiles/genesis.json:/config/genesis.json
+      - ./networkFiles/keys/validator3:/config
+      - besu-data-3:/data
+    ports:
+      - "30303:30303"
+
+  validator4:
+    <<: *besu-common
+    container_name: dics-besu-validator4
+    volumes:
+      - ./networkFiles/genesis.json:/config/genesis.json
+      - ./networkFiles/keys/validator4:/config
+      - besu-data-4:/data
+    ports:
+      - "30304:30303"
+
+networks:
+  besu-net:
+    driver: bridge
+
+volumes:
+  besu-data-1:
+  besu-data-2:
+  besu-data-3:
+  besu-data-4:
+
+# NOTE: ./generate-network.sh names key directories by generated address,
+# not "validator1..4" — after running it, rename or symlink the four
+# ./networkFiles/keys/<address> directories to validator1..validator4 (or
+# edit the volume paths above to match the generated addresses directly).
+# This is left explicit rather than auto-renamed so you always know which
+# address maps to which running node when reading Besu logs.

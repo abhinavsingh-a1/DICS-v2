@@ -1,0 +1,155 @@
+version: "3.8"
+
+# Ties together backend, oracle-service, indexer, and frontend against a
+# shared Postgres. Does NOT start the chain — see root README "run
+# order": start besu-network/ (or a standalone Anvil) first, deploy
+# contracts, fill in this directory's .env, THEN bring this stack up.
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-dics_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: ${BACKEND_SECRET_KEY}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-dics_db}
+      REDIS_URL: redis://redis:6379/0
+      ORACLE_SERVICE_URL: http://oracle-service:4100
+      ORACLE_SERVICE_API_KEY: ${ORACLE_SERVICE_API_KEY}
+      INDEXER_WEBHOOK_API_KEY: ${INDEXER_WEBHOOK_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      oracle-service:
+        condition: service_started
+
+  oracle-service:
+    build: ./oracle-service
+    ports:
+      - "4100:4100"
+    environment:
+      RPC_URL: ${CHAIN_RPC_URL}
+      CHAIN_ID: ${CHAIN_ID}
+      ORACLE_ADAPTER_ADDRESS: ${ORACLE_ADAPTER_ADDRESS}
+      ORACLE_SIGNER_PRIVATE_KEY: ${ORACLE_SIGNER_PRIVATE_KEY}
+      RELAYER_PRIVATE_KEY: ${ORACLE_RELAYER_PRIVATE_KEY}
+      EIP712_DOMAIN_NAME: DICS-OracleAdapter
+      EIP712_DOMAIN_VERSION: "1"
+      ORACLE_SERVICE_API_KEY: ${ORACLE_SERVICE_API_KEY}
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Linux — no-op on Docker Desktop, harmless either way
+
+  indexer:
+    build: ./indexer
+    environment:
+      RPC_URL: ${CHAIN_RPC_URL}
+      CHAIN_ID: ${CHAIN_ID}
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-dics_db}
+      CLAIM_REGISTRY_ADDRESS: ${CLAIM_REGISTRY_ADDRESS}
+      INSURANCE_POLICY_ADDRESS: ${INSURANCE_POLICY_ADDRESS}
+      CLAIM_REGISTRY_DEPLOY_BLOCK: ${CLAIM_REGISTRY_DEPLOY_BLOCK:-0}
+      INSURANCE_POLICY_DEPLOY_BLOCK: ${INSURANCE_POLICY_DEPLOY_BLOCK:-0}
+      BACKEND_URL: http://backend:8000
+      BACKEND_WEBHOOK_API_KEY: ${INDEXER_WEBHOOK_API_KEY}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000 # browser-side — must be host-reachable, not the Docker service name
+      VITE_CLAIM_REGISTRY_ADDRESS: ${CLAIM_REGISTRY_ADDRESS}
+      VITE_INSURANCE_POLICY_ADDRESS: ${INSURANCE_POLICY_ADDRESS}
+      VITE_STABLECOIN_ADDRESS: ${STABLECOIN_ADDRESS}
+      VITE_CHAIN_ID: ${CHAIN_ID}
+      VITE_CHAIN_RPC_URL: http://localhost:8545 # also browser-side, via the user's MetaMask
+    depends_on:
+      - backend
+
+  # --- New polyglot services, each independently containerized —
+  # each has its own Dockerfile and can be built/run on its own
+  # (docker build ./notification-service, etc.), matching the same
+  # shape as backend/oracle-service/indexer/frontend above. ---
+
+  notification-service:
+    build: ./notification-service
+    environment:
+      RPC_URL: ${CHAIN_RPC_URL}
+      INSURANCE_POLICY_ADDRESS: ${INSURANCE_POLICY_ADDRESS}
+      # Reads the INDEXER's onchain_policies table — see
+      # notification-service/internal/db/policies.go's header on why
+      # this is a read-only cross-service database read, not a new
+      # owned table.
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-dics_db}?sslmode=disable
+      WEBHOOK_URL: ${NOTIFICATION_WEBHOOK_URL}
+      POLL_INTERVAL_SECONDS: ${NOTIFICATION_POLL_INTERVAL_SECONDS:-300}
+      WARNING_WINDOW_DAYS: ${NOTIFICATION_WARNING_WINDOW_DAYS:-3}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      indexer:
+        condition: service_started
+
+  underwriter-service:
+    build: ./underwriter-service
+    ports:
+      - "8090:8090"
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-dics_db}
+      DATABASE_USER: ${POSTGRES_USER:-postgres}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      RPC_URL: ${CHAIN_RPC_URL}
+      CHAIN_ID: ${CHAIN_ID}
+      CLAIM_REGISTRY_ADDRESS: ${CLAIM_REGISTRY_ADDRESS}
+      UNDERWRITER_PRIVATE_KEY: ${UNDERWRITER_PRIVATE_KEY}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      indexer:
+        condition: service_started
+
+  document-service:
+    build: ./document-service
+    ports:
+      - "8080:8080"
+    environment:
+      STORAGE_ROOT: /data/documents
+      DATABASE_PATH: /data/documents.db
+    volumes:
+      - document-service-data:/data
+
+volumes:
+  postgres-data:
+  document-service-data:
