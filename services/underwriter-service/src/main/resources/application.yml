@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    # Points at the SAME shared Postgres instance the indexer and
+    # backend already use in docker-compose.yml — same database, this
+    # service just reads a different set of tables from it (see
+    # ClaimEntity's header on the ownership boundary this respects).
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/dics_db}
+    username: ${DATABASE_USER:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+  jpa:
+    # NEVER "update" or "create" here — this service must not be able
+    # to alter a table it doesn't own the schema for. Hibernate is used
+    # here purely as a query/mapping convenience against a schema the
+    # indexer's own migration (schema.sql) already created.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+server:
+  port: 8090
+
+dics:
+  rpc-url: ${RPC_URL:http://localhost:8545}
+  claim-registry-address: ${CLAIM_REGISTRY_ADDRESS:0x0000000000000000000000000000000000000000}
+  underwriter-private-key: ${UNDERWRITER_PRIVATE_KEY:}
+  chain-id: ${CHAIN_ID:1337}

@@ -1,0 +1,34 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  color: #1a1a1a;
+}
+nav a {
+  margin-right: 1rem;
+}
+.card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.status {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background: #eee;
+  font-size: 0.85rem;
+}
+.error {
+  color: #b00020;
+}
+button {
+  cursor: pointer;
+}
+input,
+button {
+  padding: 0.4rem;
+  margin: 0.25rem 0;
+}

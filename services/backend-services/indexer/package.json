@@ -1,0 +1,24 @@
+{
+  "name": "dics-indexer",
+  "version": "0.1.0",
+  "description": "Node.js EVM event indexer for DICS v2 — listens to ClaimRegistry/InsurancePolicy events, persists them to Postgres, and reports claim state changes to the backend. Plain JavaScript, no TypeScript.",
+  "type": "module",
+  "main": "src/listener.js",
+  "scripts": {
+    "start": "node src/listener.js",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --testPathIgnorePatterns=indexer.integration.test.js",
+    "test:integration": "node --experimental-vm-modules node_modules/.bin/jest indexer.integration.test.js",
+    "test:all": "node --experimental-vm-modules node_modules/.bin/jest",
+    "lint": "eslint src test --max-warnings=0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.2",
+    "pg": "^8.12.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "eslint": "^9.9.0",
+    "jest": "^29.7.0"
+  }
+}

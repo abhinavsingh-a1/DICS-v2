@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <!-- Moq: C#'s equivalent of Mockito (Java) / unittest.mock (Python) -->
+    <PackageReference Include="Moq" Version="4.20.70" />
+    <!--
+      EF Core's InMemory provider — the idiomatic .NET way to test code
+      that uses a DbContext. Directly mocking DbContext/DbSet with Moq is
+      notoriously awkward (LINQ queries against a mocked DbSet don't
+      behave like real queries without significant extra setup), so the
+      .NET ecosystem's standard answer is a real, lightweight, disposable
+      in-memory database instead — conceptually similar to how the Python
+      backend's tests use a real (if temporary) SQLite database rather
+      than mocking SQLAlchemy itself (see backend/tests/conftest.py).
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../DocumentService.csproj" />
+  </ItemGroup>
+
+</Project>
