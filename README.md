@@ -1,6 +1,6 @@
 # DICS v2 — Decentralized Insurance Claims & Risk Settlement Platform
 
-**Aurelia Labs** (dummy organization). A blockchain-based insurance
+**Dummy Labs** (dummy organization). A blockchain-based insurance
 platform: self-service policy subscription with atomic premium
 payment, wallet-authenticated claim submission, off-chain oracle
 verification, on-chain approval/payout, a full CDP/stablecoin module
