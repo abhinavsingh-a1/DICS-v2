@@ -33,6 +33,24 @@ import java.util.List;
  * with this service instead submitting a PROPOSAL to that Safe rather
  * than holding signing power outright. Flagged here rather than implied
  * to be production-ready as written.
+ *
+ * UPDATE — this is no longer just a documented risk, it is now
+ * factually broken against any real deployment: `UNDERWRITER_ROLE` on
+ * `ClaimRegistry` has been moved to a real Safe multisig (see
+ * `safe-ops/` and `docs/services/10-Safe-Multisig-And-KMS.md`).
+ * `msg.sender` for a call made through this class is always the plain
+ * EOA `UNDERWRITER_PRIVATE_KEY` corresponds to — never the Safe's own
+ * address, since a Safe's transactions are only ever sent BY the Safe
+ * contract itself, after collecting owner signatures, not by any
+ * single EOA calling the target contract directly. A call through this
+ * class against a real deployment will revert with
+ * `AccessControlUnauthorizedAccount`, not succeed with reduced
+ * security — it does not "sort of still work." The real write path is
+ * now `safe-ops/scripts/04-propose-and-execute-transaction.js`. This
+ * class is kept only for pointing a LOCAL test deployment's
+ * `UNDERWRITER_ROLE` directly at a throwaway EOA, bypassing the Safe
+ * entirely for a quick local check — never for anything resembling a
+ * real environment.
  */
 @Component
 public class ClaimRegistryClient {

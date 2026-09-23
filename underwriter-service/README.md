@@ -52,6 +52,22 @@ docker build -t dics-underwriter-service .
 docker run --env-file .env -p 8090:8090 dics-underwriter-service
 ```
 
+## ⚠️ Architecture update — read before using the `/approve`, `/reject`, `/payout` endpoints
+
+`UNDERWRITER_ROLE` on `ClaimRegistry` now belongs to a real Safe
+multisig, not a single EOA — see `safe-ops/` and
+`docs/services/10-Safe-Multisig-And-KMS.md`. This service's own direct
+on-chain write path (`ClaimRegistryClient.java`, using
+`UNDERWRITER_PRIVATE_KEY`) will **revert with `AccessControlUnauthorizedAccount`**
+against any deployment where that migration has happened — it is not a
+reduced-security fallback, it simply no longer works. The real
+day-to-day write path is now `safe-ops/scripts/04-propose-and-execute-transaction.js`.
+This service's `GET /claims/pending`/`GET /claims/{id}` endpoints
+remain accurate (read-only, unaffected); only the three POST endpoints
+are affected, and only on a deployment where the Safe migration has
+actually run — a fresh local deployment that never grants
+`UNDERWRITER_ROLE` to a Safe at all still works exactly as before.
+
 ## Known limitations, stated directly
 
 - `UNDERWRITER_PRIVATE_KEY` is a single EOA key, not the Safe multisig

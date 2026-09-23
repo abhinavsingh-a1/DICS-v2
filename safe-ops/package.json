@@ -1,0 +1,27 @@
+{
+  "name": "safe-ops",
+  "version": "0.1.0",
+  "description": "Safe multisig deployment and day-to-day operations for UNDERWRITER_ROLE, with owner keys held in AWS KMS instead of raw private keys.",
+  "type": "commonjs",
+  "scripts": {
+    "test": "jest",
+    "deploy-safe-infra": "node scripts/01-deploy-safe-infrastructure.js",
+    "create-safe": "node scripts/02-create-underwriter-safe.js",
+    "grant-role": "node scripts/03-grant-underwriter-role.js",
+    "propose-execute": "node scripts/04-propose-and-execute-transaction.js",
+    "add-owner": "node scripts/05-add-owner.js",
+    "remove-owner": "node scripts/06-remove-owner.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-kms": "^3.637.0",
+    "@safe-global/protocol-kit": "^4.1.0",
+    "@safe-global/api-kit": "^2.4.4",
+    "@safe-global/safe-core-sdk-types": "^5.1.0",
+    "@safe-global/safe-deployments": "^1.37.5",
+    "ethers": "^6.13.2",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

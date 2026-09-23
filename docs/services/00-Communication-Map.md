@@ -60,8 +60,22 @@ document (`09`) possible to write at all.
 | `notification-service` | Chain (`InsurancePolicy`) | Read-only calls | Live premium status |
 | `notification-service` | External webhook URL | HTTP POST | Sends the actual warning |
 | `underwriter-service` | Postgres (indexer's `onchain_claims` table) | Direct SQL, read-only | Which claims are pending |
-| `underwriter-service` | Chain (`ClaimRegistry`) | Signed transaction | `setClaimStatus`, `payoutClaim` |
+| `underwriter-service` | Chain (`ClaimRegistry`) | Signed transaction | `setClaimStatus`, `payoutClaim` — **superseded, see below** |
+| `safe-ops` | Chain (Safe infra, `ClaimRegistry`) | Signed transactions, via owner keys | Deploy Safe infra, create the Safe, grant `UNDERWRITER_ROLE`, propose+sign+execute claim decisions |
+| `safe-ops` | AWS KMS | Signing API calls | Every owner signature — no private key ever leaves KMS |
 | `document-service` | — nothing — | — | See below |
+
+## `underwriter-service`'s write path is superseded by `safe-ops`
+
+`ClaimRegistry.UNDERWRITER_ROLE` now belongs to a Safe multisig, not a
+single EOA — see `docs/services/10-Safe-Multisig-And-KMS.md` for the
+full design. `underwriter-service`'s `ClaimRegistryClient.java` (a
+single configured private key) will **revert** against any deployment
+where this migration has run, since `msg.sender` for its calls is
+always that EOA, never the Safe's own address. Its read-only endpoints
+(`GET /claims/pending`, `GET /claims/{id}`) remain accurate; only the
+three POST endpoints are affected. The real write path for
+approve/reject/payout is now `safe-ops/scripts/04-propose-and-execute-transaction.js`.
 
 ## The one real gap: `document-service` is fully isolated
 

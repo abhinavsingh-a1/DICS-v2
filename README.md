@@ -1,6 +1,6 @@
 # DICS v2 — Decentralized Insurance Claims & Risk Settlement Platform
 
-**Dummy Labs** (dummy organization). A blockchain-based insurance
+**Aurelia Labs** (dummy organization). A blockchain-based insurance
 platform: self-service policy subscription with atomic premium
 payment, wallet-authenticated claim submission, off-chain oracle
 verification, on-chain approval/payout, a full CDP/stablecoin module
@@ -25,11 +25,29 @@ README stays at the level of "what exists and how to run it."
 | Notification service | **Go** | `notification-service/` |
 | Underwriter back-office | **Java, Spring Boot** | `underwriter-service/` |
 | Document/evidence service | **.NET, ASP.NET Core** | `document-service/` |
+| Safe multisig + KMS ops | **Node.js** (`@safe-global/protocol-kit`) | `safe-ops/` |
 
-**9 project directories. 8 of them (everything but the contracts
+**10 project directories. 9 of them (everything but the contracts
 themselves) are independently containerized** — each has its own
-`Dockerfile` and can be built and run entirely on its own, or all
-together via the root `docker-compose.yml`.
+Dockerfile and can be built and run entirely on its own, or all
+together via the root `docker-compose.yml`. `safe-ops/` is the one
+exception to "runs continuously": it's a set of on-demand
+administrative scripts, gated behind Docker Compose's `admin-tools`
+profile rather than starting with a plain `docker compose up` — see
+`docs/services/08-Docker-Compose-Containerization.md`.
+
+## `UNDERWRITER_ROLE` is now a Safe multisig, not a single key
+
+As of this pass, `ClaimRegistry.UNDERWRITER_ROLE` belongs to a real
+Safe multisig whose owners are individual employees, each signing with
+an AWS KMS key that never exists as a plaintext private key anywhere.
+`safe-ops/` deploys the Safe infrastructure, creates the Safe, and
+handles day-to-day approve/reject/payout plus onboarding/offboarding
+employees. Full design rationale and operational checklists:
+`docs/services/10-Safe-Multisig-And-KMS.md`. This also means
+`underwriter-service`'s own direct-write endpoints are now superseded
+on any deployment where this migration has run — see that service's
+own README for exactly what still works and what now reverts.
 
 ## The smart contracts, specifically
 
@@ -54,8 +72,8 @@ migration — the actual process is documented honestly).
 | Set | What it covers | Where |
 |---|---|---|
 | **Data flow** (15 documents) | A concrete $33→$221 scenario traced through every function, every EIP, with real addresses and values — plus 8 alternate scenarios (rejected, lapsed, coverage-exceeded, replay attack, etc.) | `docs/dataflow/` |
-| **Tests & mocks explained** (17 documents) | Junior-developer-level walkthroughs of every test file across Solidity, Python, Java, Go, and C# — why each function exists, why each line, and five languages' different idioms for the same "mock a dependency" idea | `docs/tests-explained/` |
-| **Service guides** (10 documents) | Per-service run/test instructions, the full inter-service communication map, Docker Compose wiring, and a step-by-step post-deploy verification checklist | `docs/services/` |
+| **Tests & mocks explained** (18 documents) | Junior-developer-level walkthroughs of every test file across Solidity, Python, Java, Go, C#, and Node — why each function exists, why each line, and six languages' different idioms for the same "mock a dependency" idea | `docs/tests-explained/` |
+| **Service guides** (11 documents) | Per-service run/test instructions, the full inter-service communication map, Docker Compose wiring, a step-by-step post-deploy verification checklist, and the Safe multisig + KMS design | `docs/services/` |
 
 Plus standalone documents: `docs/Project-1-Smart-Contracts-Explained.md`
 (the contracts, function by function), `docs/Smart-Contract-Testing-Guide.md`
@@ -116,15 +134,17 @@ cd indexer                 && npm test && npm run test:integration
 cd notification-service    && go test ./... -v
 cd underwriter-service     && mvn test
 cd document-service/document-service.Tests && dotnet test
+cd safe-ops                && npm test
 ```
 
-Five different languages, five different mocking idioms, documented
-side by side in `docs/tests-explained/12` (Python `unittest.mock`),
-`13`/`14` (real bugs caught by manual review, since no JS test tooling
-was available), `15` (Go's dependency-free pure functions), `16` (Java
-Mockito), `17` (C# Moq).
+Six languages, six mocking idioms, documented side by side in
+`docs/tests-explained/12` (Python `unittest.mock`), `13`/`14` (real
+bugs caught by manual review, since no JS test tooling was available
+for the frontend), `15` (Go's dependency-free pure functions), `16`
+(Java Mockito), `17` (C# Moq), `18` (Node — real generated cryptography
+fed through a mocked KMS client, for `safe-ops`).
 
-**None of the Go, Java, or .NET code — and none of the smart contract
+**None of the Go, Java, .NET, or `safe-ops` code — and none of the smart contract
 work before the point it was actually run — has been compiled or
 executed by the assistant that built it.** No toolchains with network
 access for dependency resolution were available in that environment.
@@ -148,12 +168,12 @@ Run everything above yourself before trusting it fully.
    shallow block-count safety margin.
 4. **No true reconciliation job** between the indexer's mirror and the
    backend's own claims table beyond the one-way webhook.
-5. **No script deploys a real Safe or `TimelockController`** for either
-   governance domain — `besu-network/README.md` documents the intended
-   wiring by hand; every private key used by `oracle-service` and
-   `underwriter-service` is a single EOA standing in for what should be
-   multisig-controlled roles in production, flagged explicitly in both
-   services' own code comments.
+5. **`UNDERWRITER_ROLE` now has real Safe + KMS tooling (`safe-ops/`),
+   but no `TimelockController` deployment script exists for either
+   governance domain**, and `oracle-service`'s signer key remains a
+   single EOA — `besu-network/README.md` documents the Timelock wiring
+   by hand; that migration hasn't been done the way the underwriter
+   role's has.
 6. **No CI pipelines configured** — no `.github/workflows/*.yml` files.
 7. **No shared, persistent (non-local) infrastructure** — everything
    here is local-development tooling.

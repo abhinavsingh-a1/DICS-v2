@@ -150,6 +150,35 @@ services:
     volumes:
       - document-service-data:/data
 
+  # NOT started by a plain `docker compose up` — this is a set of
+  # one-off administrative scripts (deploy Safe infra once, create the
+  # Safe once, propose/sign/execute on demand), not a persistent
+  # service. The `admin-tools` profile means it only starts when
+  # explicitly requested:
+  #   docker compose --profile admin-tools run safe-ops scripts/04-propose-and-execute-transaction.js 1 approve
+  # See safe-ops/README.md and docs/services/10-Safe-Multisig-And-KMS.md.
+  safe-ops:
+    build: ./safe-ops
+    profiles: ["admin-tools"]
+    environment:
+      RPC_URL: ${CHAIN_RPC_URL}
+      CHAIN_ID: ${CHAIN_ID}
+      CLAIM_REGISTRY_ADDRESS: ${CLAIM_REGISTRY_ADDRESS}
+      SAFE_SINGLETON_ADDRESS: ${SAFE_SINGLETON_ADDRESS}
+      SAFE_PROXY_FACTORY_ADDRESS: ${SAFE_PROXY_FACTORY_ADDRESS}
+      SAFE_FALLBACK_HANDLER_ADDRESS: ${SAFE_FALLBACK_HANDLER_ADDRESS}
+      UNDERWRITER_SAFE_ADDRESS: ${UNDERWRITER_SAFE_ADDRESS}
+      DEPLOYER_PRIVATE_KEY: ${DEPLOYER_PRIVATE_KEY}
+      AWS_REGION: ${AWS_REGION}
+      OWNER_KMS_KEY_IDS: ${OWNER_KMS_KEY_IDS}
+      SAFE_THRESHOLD: ${SAFE_THRESHOLD:-2}
+      # Standard AWS credential env vars, if not using an attached IAM
+      # role — see safe-ops/.env.example's own note on credential
+      # resolution.
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+
 volumes:
   postgres-data:
   document-service-data:
