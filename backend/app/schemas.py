@@ -34,6 +34,13 @@ class CreateClaimRequest(BaseModel):
     policy_id: int
     declared_amount: float = Field(gt=0)
     merkle_root: str | None = Field(default=None, pattern=r"^0x[a-fA-F0-9]{64}$")
+    # Required whenever merkle_root is provided — enforced in the route,
+    # not here, since Pydantic field validators can't easily express
+    # "required only if a sibling field is set." See
+    # frontend/src/api/contract.js's generateClaimSalt() for how this
+    # value is produced: 32 cryptographically random bytes, never
+    # derived from anything about the claimant's real-world identity.
+    merkle_salt: str | None = Field(default=None, pattern=r"^0x[a-fA-F0-9]{64}$")
     documents: list[DocumentIn] = Field(default_factory=list)
 
 
@@ -51,6 +58,8 @@ class ClaimOut(BaseModel):
     policy_id: int
     claimant_address: str
     declared_amount: float
+    merkle_root: str | None
+    merkle_salt: str | None
     status: ClaimStatus
     onchain_claim_id: int | None
     tx_hash: str | None

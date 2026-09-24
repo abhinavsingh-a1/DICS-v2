@@ -37,6 +37,18 @@ class Claim(Base):
     claimant_address: Mapped[str] = mapped_column(String(42), nullable=False, index=True)
     declared_amount: Mapped[float] = mapped_column(Float, nullable=False)
     merkle_root: Mapped[str | None] = mapped_column(String(66), nullable=True)
+    # Random per-claim salt, mixed into merkle_root's computation on the
+    # frontend (see contract.js's placeholderMerkleRoot) specifically so
+    # two different claims with identical description text never produce
+    # the same on-chain merkleRoot. Persisted here — not just computed
+    # and discarded — because losing it would mean nobody could ever
+    # regenerate or verify that root from the original claim text again.
+    # This is NOT an identity-verification field and never stores
+    # anything about who the claimant is beyond their own wallet address
+    # (already captured in claimant_address) — see contract.js's own
+    # comment on why SSN/passport-style identifiers were deliberately
+    # rejected as an input to this value.
+    merkle_salt: Mapped[str | None] = mapped_column(String(66), nullable=True)
     status: Mapped[ClaimStatus] = mapped_column(
         Enum(ClaimStatus), nullable=False, default=ClaimStatus.DRAFT
     )

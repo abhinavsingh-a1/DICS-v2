@@ -1,6 +1,6 @@
 # DICS v2 Smart Contracts — Testing Guide
 
-Covers all **57 test functions** across **7 Foundry test files**, pulled
+Covers all **59 test functions** across **8 Foundry test files**, pulled
 directly from the actual source (not recalled from memory) so this list
 matches exactly what's in the repository.
 
@@ -68,6 +68,7 @@ spending time on files that depend on the broken piece.
 | 5 | `PolicyCatalog.t.sol` | 7 | Self-service `subscribeToPolicy` — atomic issue-and-pay |
 | 6 | `Vault.t.sol` | 8 | The CDP module — deposit, mint, liquidation |
 | 7 | `Governance.t.sol` | 3 | The full propose → vote → queue → execute cycle against a real `Vault` |
+| 8 | `ClaimGasPaymaster.t.sol` | 2 | EIP-4337 gas sponsorship — a real `EntryPoint` + `SimpleAccount` + signed `UserOperation`, this contract's first real exercise in this project |
 
 ---
 
@@ -193,6 +194,17 @@ forge test --match-path test/Governance.t.sol -vvv
 | `test_RevertWhen_ExecutingBeforeTimelockDelayElapses` | Execution is blocked until the Timelock's minimum delay has passed |
 | `test_RevertWhen_DirectCallBypassingGovernance` | `Vault.updateRiskParams` cannot be called directly, bypassing governance entirely |
 
+### `ClaimGasPaymaster.t.sol`
+
+```bash
+forge test --match-path test/ClaimGasPaymaster.t.sol -vvv
+```
+
+| Test | What it verifies |
+|---|---|
+| `test_SponsoredClaimSubmission_SucceedsWithZeroEthInAccount` | A policyholder's smart-contract wallet holding **zero ETH** can still submit a claim — a real, signed `UserOperation` routes through `EntryPoint` → `SimpleAccount` → `ClaimRegistry.submitClaim`, with `ClaimGasPaymaster` covering every wei of gas |
+| `test_RevertWhen_DailyCapExceeded` | A sponsorship request that would push a sender's daily total past `dailySponsorshipCapWei` fails validation rather than being partially sponsored |
+
 ---
 
 ## 5. Coverage target
@@ -212,11 +224,14 @@ that's worth investigating specifically — it usually means a branch
 
 Worth being direct about the boundary of what Section 4 covers:
 
-- **`ClaimGasPaymaster.sol` has no Foundry test at all** — see
-  `Project-1-Smart-Contracts-Explained.md`'s own notes on why (it
-  requires deploying a real `EntryPoint` and constructing valid
-  `PackedUserOperation`s, a distinctly larger undertaking, explicitly
-  not attempted).
+- **`ClaimGasPaymaster.sol` now has real test coverage** (`ClaimGasPaymaster.t.sol`,
+  added after this contract sat completely unused in the project),
+  including a genuine signed `UserOperation` through a real `EntryPoint`
+  — but it's the one test file in this project whose exact API
+  assumptions (packing helpers, `SimpleAccountFactory`/`BasePaymaster`
+  method signatures) were never independently compiler-verified in the
+  environment that wrote it. Treat any mismatch `forge build` reports
+  here as expected, real work — see the file's own header.
 - **These are unit/integration tests against Foundry's own local EVM**,
   not against the real Besu network. The indexer and oracle-service
   projects each have their own *separate* integration test

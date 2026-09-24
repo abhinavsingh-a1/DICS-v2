@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { createClaim } from '../api/client.js';
-import { submitClaimOnChain, placeholderMerkleRoot } from '../api/contract.js';
+import { submitClaimOnChain, placeholderMerkleRoot, generateClaimSalt } from '../api/contract.js';
 
 /**
  * Full flow: create the off-chain claim record (backend), then submit
@@ -32,7 +32,13 @@ export default function FileClaim() {
       return;
     }
 
-    const merkleRoot = placeholderMerkleRoot(description);
+    // Fresh random salt, generated once per claim attempt — not reused,
+    // not derived from anything about the claimant beyond this random
+    // value. See contract.js's generateClaimSalt() for why this exists:
+    // two different claims with identical description text must never
+    // produce the same on-chain merkleRoot.
+    const salt = generateClaimSalt();
+    const merkleRoot = placeholderMerkleRoot(description, salt);
 
     try {
       setStep('creating');
@@ -40,6 +46,7 @@ export default function FileClaim() {
         policy_id: Number(policyId),
         declared_amount: Number(amount),
         merkle_root: merkleRoot,
+        merkle_salt: salt,
         documents: [],
       });
       const backendClaim = createRes.data;
@@ -63,8 +70,8 @@ export default function FileClaim() {
       <h2>File a New Claim</h2>
       <p style={{ color: '#888' }}>
         Evidence upload isn't wired up yet in this build (see backend README, "still open") — this
-        form generates a placeholder evidence hash from the description text alone, clearly not a
-        real Merkle proof over actual documents.
+        form generates a placeholder evidence hash from the description text plus a random salt,
+        not yet a real Merkle proof over actual documents.
       </p>
       <form onSubmit={handleSubmit} className="card">
         <div>

@@ -39,6 +39,47 @@ async def test_get_claim_not_found(client, auth_headers):
     assert res.status_code == 404
 
 
+async def test_create_claim_with_matching_merkle_root_and_salt_succeeds(client, auth_headers):
+    root = "0x" + "ab" * 32
+    salt = "0x" + "cd" * 32
+    res = await client.post(
+        "/claims",
+        json={
+            "policy_id": 1,
+            "declared_amount": 500.0,
+            "merkle_root": root,
+            "merkle_salt": salt,
+            "documents": [],
+        },
+        headers=auth_headers["headers"],
+    )
+    assert res.status_code == 201
+    body = res.json()
+    # Confirms merkle_salt round-trips through storage, not just
+    # merkle_root — a salt that silently failed to persist would mean
+    # nobody could ever regenerate this exact root again (see
+    # models.py's own comment on why this field exists at all).
+    assert body["merkle_root"] == root
+    assert body["merkle_salt"] == salt
+
+
+async def test_create_claim_with_root_but_no_salt_rejected(client, auth_headers):
+    # The real bug this guards against: a merkle_root persisted with no
+    # recorded salt is useless for later verification, and — before this
+    # check existed — silently allowed, not rejected.
+    res = await client.post(
+        "/claims",
+        json={
+            "policy_id": 1,
+            "declared_amount": 500.0,
+            "merkle_root": "0x" + "ab" * 32,
+            "documents": [],
+        },
+        headers=auth_headers["headers"],
+    )
+    assert res.status_code == 422
+
+
 @respx.mock
 async def test_trigger_verification_approved_updates_claim_status(client, auth_headers):
     create_res = await _create_claim(client, auth_headers, declared_amount=250.0)

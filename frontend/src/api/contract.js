@@ -144,17 +144,51 @@ export async function payPremiumOnChain(signer, policyId, premiumAmountEther) {
 }
 
 /**
+ * A cryptographically random 32-byte salt, fresh per claim — the actual
+ * fix for a real bug: without this, placeholderMerkleRoot(description)
+ * alone would produce the IDENTICAL hash for two different claims that
+ * happen to share the same description text (two different users
+ * writing "flight cancelled" both get the same merkleRoot), which is a
+ * genuine collision risk, not a cosmetic one. Uses the Web Crypto API
+ * (crypto.getRandomValues) — available in every modern browser, no
+ * dependency needed — never anything derived from the claimant's real
+ * identity. See this file's own note above generateClaimSalt's caller
+ * for why identity documents (SSN, passport number) were deliberately
+ * rejected as an input here: they're low-entropy, brute-forceable once
+ * hashed, and this system already has a real identity binding — the
+ * claimant's own wallet signature — that a hash of anything else can't
+ * strengthen.
+ */
+export function generateClaimSalt() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return '0x' + Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
  * PLACEHOLDER evidence hashing. This project's document-upload/IPFS
  * pipeline is not built yet (see backend/README.md "still open") — this
  * generates a merkleRoot from the claim description text alone, purely
  * so the end-to-end submit flow (backend record + on-chain tx +
  * indexer + webhook) can be exercised. Replace with a real Merkle tree
- * over actual uploaded document hashes when that pipeline exists;
- * labeled clearly here rather than presented as the real thing, the
- * same way MockOracle/verificationLogic.js are labeled elsewhere in
- * this project.
+ * over actual uploaded document hashes when that pipeline exists (see
+ * document-service, which already computes a REAL one — just not yet
+ * wired into this call site); labeled clearly here rather than
+ * presented as the real thing, the same way MockOracle/verificationLogic.js
+ * are labeled elsewhere in this project.
+ *
+ * `salt` is REQUIRED, not optional — see generateClaimSalt() above for
+ * why. The caller is responsible for generating one fresh salt per
+ * claim (not reusing one across claims) and persisting it via the
+ * backend's merkle_salt field, since losing the salt means the root can
+ * never be regenerated or independently verified again.
  */
-export function placeholderMerkleRoot(claimDescription) {
-  return ethers.keccak256(ethers.toUtf8Bytes(claimDescription || 'no-description-provided'));
+export function placeholderMerkleRoot(claimDescription, salt) {
+  if (!salt) {
+    throw new Error('placeholderMerkleRoot requires a salt — call generateClaimSalt() first.');
+  }
+  const descriptionBytes = ethers.toUtf8Bytes(claimDescription || 'no-description-provided');
+  const saltBytes = ethers.getBytes(salt);
+  return ethers.keccak256(ethers.concat([saltBytes, descriptionBytes]));
 }
 

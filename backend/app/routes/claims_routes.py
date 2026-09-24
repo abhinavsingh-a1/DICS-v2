@@ -34,11 +34,22 @@ async def create_claim(
     claimant: Annotated[str, Depends(get_current_address)],
     db: AsyncSession = Depends(get_db),
 ):
+    # merkle_root and merkle_salt must arrive together or not at all —
+    # a root with no recorded salt could never be regenerated or
+    # verified against the original claim text again. Checked here
+    # rather than as a Pydantic field validator, since Pydantic can't
+    # easily express "required only if this OTHER field is set."
+    if (payload.merkle_root is None) != (payload.merkle_salt is None):
+        raise HTTPException(
+            status_code=422, detail="merkle_root and merkle_salt must both be provided together, or neither."
+        )
+
     claim = Claim(
         policy_id=payload.policy_id,
         claimant_address=claimant,
         declared_amount=payload.declared_amount,
         merkle_root=payload.merkle_root,
+        merkle_salt=payload.merkle_salt,
         status=ClaimStatus.DRAFT,
     )
     db.add(claim)

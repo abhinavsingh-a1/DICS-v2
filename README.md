@@ -177,11 +177,23 @@ Run everything above yourself before trusting it fully.
 6. **No CI pipelines configured** — no `.github/workflows/*.yml` files.
 7. **No shared, persistent (non-local) infrastructure** — everything
    here is local-development tooling.
-8. **`ClaimGasPaymaster.sol` has no Foundry test at all** and remains
-   the single lowest-confidence contract in the project, independent of
-   the OpenZeppelin version question.
+8. **`ClaimGasPaymaster.sol` now has real test coverage**
+   (`ClaimGasPaymaster.t.sol` — a genuine signed `UserOperation` through a
+   real `EntryPoint` and `SimpleAccount`, proving a claimant with zero
+   ETH can still submit a claim, gas fully sponsored). It's still the one
+   contract in this project whose exact dependency API was never
+   compiler-verified in the environment that wrote it — see that file's
+   own header. `DICSGovernor.sol`, by contrast, was already genuinely in
+   use (the CDP module's real governance cycle, exercised by
+   `Governance.t.sol`) and needed no changes.
 9. **Frontend has no live-updating status, no component/E2E tests, and
    no reconnect-on-refresh.**
+10. **`placeholderMerkleRoot` is still a placeholder** — now correctly
+    salted per-claim (fixing a real hash-collision risk between two
+    claims with identical description text), but still hashing
+    description text, not real uploaded evidence. See `document-service`,
+    which already computes a real Merkle root and is still not wired
+    into this call site.
 
 Every item above is also documented in more depth at the specific file
 or service where it's actually relevant — this list is a map to those,
